@@ -1,0 +1,97 @@
+'''
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
+# Smaple Seeker Main
+
+import sys
+import datetime
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QWidget, QPushButton,
+                             QHBoxLayout, QVBoxLayout, QApplication)
+
+class InventoryModel(QtGui.QStandardItemModel):
+    def __init__(self, data, parent=None):
+        QtGui.QStandardItemModel.__init__(self, parent)
+        self._data = data
+
+        for row in data:
+            data_row = [ QtGui.QStandardItem("{0}".format(x)) for x in row ]
+            self.appendRow(data_row)
+        return
+
+    def rowCount(self, parent=None):
+        return len(self._data)
+
+    def columnCount(self, parent=None):
+        return len(self._data[0])
+
+
+ 
+class MainWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.table = QtWidgets.QTableView()
+
+        data = [
+          [3243, 9, 2, 'Z-43', datetime.datetime(2020,10,5),datetime.datetime(2020,11,21)],
+          [5743, 1, 0,'Z-43', datetime.datetime(2020,11,2),],
+          [4541, 5, 0,'Z-43', datetime.datetime(2020,3,6),datetime.datetime(2020,5,8)],
+          [5544, 3, 2,'X-34', datetime.datetime(2020,5,12),],
+          [8985, 8, 9, 'X-34', datetime.datetime(2020,9,4),datetime.datetime(2020,12,16)],
+        ]
+
+        self.inventoryModel = InventoryModel(data)
+        
+        headerLabels = ['ID Number','Age (Months)','Location','Genome Type', 'Birth Date', 'Death Date']
+        self.inventoryModel.setHorizontalHeaderLabels(headerLabels)
+        self.inventoryModel.setVerticalHeaderLabels('' for item in data)
+
+        self.table.setModel(self.inventoryModel)
+        self.table.resizeColumnsToContents()
+        self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+
+        addButton = QtWidgets.QPushButton("Add")
+        editButton = QtWidgets.QPushButton("Edit")
+        deleteButton = QtWidgets.QPushButton("Delete")
+
+
+        verticalBox = QtWidgets.QVBoxLayout()
+
+        buttonsLayout = QtWidgets.QHBoxLayout()
+        buttonsLayout.addWidget(addButton)
+        buttonsLayout.addWidget(editButton)
+        buttonsLayout.addWidget(deleteButton)
+
+        verticalBox.addWidget(self.table)
+        verticalBox.addLayout(buttonsLayout)
+        verticalBox.setAlignment(Qt.AlignHCenter)
+
+        self.setLayout(verticalBox)
+
+        self.setGeometry(300, 300, 700, 800)
+        self.setWindowTitle('Sample Seeker')
+        self.show()
+
+def main():
+    app=QtWidgets.QApplication(sys.argv)
+    window=MainWindow()
+    window.show()
+    app.exec_()
+ 
+if __name__ == '__main__':
+    main()
