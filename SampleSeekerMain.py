@@ -40,10 +40,17 @@ class InventoryModel(QtGui.QStandardItemModel):
         return len(self._data[0])
 
 
- 
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+
+        dataHeaderLabels = ['ID','Age (Weeks)','Location','Genome Type', 'Birth Date', 'Sac Date']
+
+        self.searchComboBox = QtWidgets.QComboBox()
+        self.searchComboBox.addItems(dataHeaderLabels)
+
+        self.searchTextBox = QtWidgets.QLineEdit()
 
         self.table = QtWidgets.QTableView()
 
@@ -56,27 +63,35 @@ class MainWindow(QWidget):
         ]
 
         self.inventoryModel = InventoryModel(data)
-        
-        headerLabels = ['ID Number','Age (Months)','Location','Genome Type', 'Birth Date', 'Death Date']
-        self.inventoryModel.setHorizontalHeaderLabels(headerLabels)
+
+        self.inventoryModel.setHorizontalHeaderLabels(dataHeaderLabels)
         self.inventoryModel.setVerticalHeaderLabels('' for item in data)
 
         self.table.setModel(self.inventoryModel)
         self.table.resizeColumnsToContents()
         self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
 
+        verticalBox = QtWidgets.QVBoxLayout()
+
+        searchButton = QtWidgets.QPushButton("Search")
+        clearSearchButton = QtWidgets.QPushButton("Clear")
+
+        searchLayout = QtWidgets.QHBoxLayout()
+        searchLayout.addWidget(self.searchComboBox)
+        searchLayout.addWidget(self.searchTextBox)
+        searchLayout.addWidget(searchButton)
+        searchLayout.addWidget(clearSearchButton)
+
         addButton = QtWidgets.QPushButton("Add")
         editButton = QtWidgets.QPushButton("Edit")
         deleteButton = QtWidgets.QPushButton("Delete")
-
-
-        verticalBox = QtWidgets.QVBoxLayout()
 
         buttonsLayout = QtWidgets.QHBoxLayout()
         buttonsLayout.addWidget(addButton)
         buttonsLayout.addWidget(editButton)
         buttonsLayout.addWidget(deleteButton)
 
+        verticalBox.addLayout(searchLayout)
         verticalBox.addWidget(self.table)
         verticalBox.addLayout(buttonsLayout)
         verticalBox.setAlignment(Qt.AlignHCenter)
@@ -92,6 +107,6 @@ def main():
     window=MainWindow()
     window.show()
     app.exec_()
- 
+
 if __name__ == '__main__':
     main()
