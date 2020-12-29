@@ -18,6 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 import datetime
 
+from DatabaseManager import DatabaseManager
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QPushButton,
@@ -45,7 +47,7 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        dataHeaderLabels = ['ID','Age (Weeks)','Location','Genome Type', 'Birth Date', 'Sac Date']
+        dataHeaderLabels = ['ID','Age (Weeks)','Location','Genotype', 'Birth Date', 'Sac Date']
 
         self.searchComboBox = QtWidgets.QComboBox()
         self.searchComboBox.addItems(dataHeaderLabels)
@@ -54,6 +56,18 @@ class MainWindow(QWidget):
 
         self.table = QtWidgets.QTableView()
 
+        self.databaseManager = DatabaseManager(databaseName='', serverUserName='', serverPassword='')
+
+        # Load inventory items from database 
+        results = self.databaseManager.GetAllInventoryItems()
+        data = []
+        for entry in results:
+            data.append([entry["Id"], entry["Age"], entry['Location'], entry['BirthDate'], entry['SacDate']])
+
+        print(data)
+ 
+        # todo: Remove sample Data
+        ''' 
         data = [
           [3243, 9, 2, 'Z-43', datetime.datetime(2020,10,5),datetime.datetime(2020,11,21)],
           [5743, 1, 0,'Z-43', datetime.datetime(2020,11,2),],
@@ -61,6 +75,7 @@ class MainWindow(QWidget):
           [5544, 3, 2,'X-34', datetime.datetime(2020,5,12),],
           [8985, 8, 9, 'X-34', datetime.datetime(2020,9,4),datetime.datetime(2020,12,16)],
         ]
+        '''
 
         self.inventoryModel = InventoryModel(data)
 
