@@ -1,7 +1,23 @@
+'''
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 # DatabaseManager.py
 
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime
 from datetime import datetime
+from ConfigurationManager import ConfigurationManager
 
 class InventoryItem:
     def __init__(self, age = 0, location = '', genotype = '', birthDate = datetime.now(), sacDate = datetime.now()):
@@ -12,18 +28,17 @@ class InventoryItem:
         self.SacDate = sacDate
 
 class DatabaseManager:
-    def __init__(self,
-        serverHost = 'localhost', serverPort = 3306,
-        databaseName = '', serverUserName = '',
-        serverPassword = ''):
-        # todo: Read from configuration JSON
-        self.ServerHost = serverHost
-        self.ServerPort = serverPort
-        self.DatabaseName = databaseName
+    def __init__(self):
+        self.configurationManager = ConfigurationManager()
+        databaseConfigurations = configurationManager.GetDatabaseConfiguration()
+        
+        self.ServerHost = databaseConfigurations['ServerHostName']
+        self.ServerPort = databaseConfigurations['ServerPortNumber']
+        self.DatabaseName = databaseConfigurations['DatabaseName']
 
         # Enter in credentials here:
-        self.ServerUserName = serverUserName
-        self.ServerPassword = serverPassword
+        self.ServerUserName = databaseConfigurations['ServerUsername']
+        self.ServerPassword = databaseConfigurations['ServerPassword']
 
 
         self.engine = create_engine(

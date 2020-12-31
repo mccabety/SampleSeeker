@@ -1,0 +1,13 @@
+{
+    "Configurations": 
+    {
+      "DatabaseConfigurations" :
+      {
+        "ServerHostName" : "",
+        "ServerPortNumber" : 0,
+        "ServerUsername" : "",
+        "ServerPassword" : "",
+        "DatabaseName" : ""
+      }
+    }
+  }

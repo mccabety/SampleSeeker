@@ -56,7 +56,7 @@ class MainWindow(QWidget):
 
         self.table = QtWidgets.QTableView()
 
-        self.databaseManager = DatabaseManager(databaseName='', serverUserName='', serverPassword='')
+        self.databaseManager = DatabaseManager()
 
         # Load inventory items from database 
         results = self.databaseManager.GetAllInventoryItems()
