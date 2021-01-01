@@ -30,7 +30,7 @@ class InventoryItem:
 class DatabaseManager:
     def __init__(self):
         self.configurationManager = ConfigurationManager()
-        databaseConfigurations = configurationManager.GetDatabaseConfiguration()
+        databaseConfigurations = self.configurationManager.GetDatabaseConfiguration()
         
         self.ServerHost = databaseConfigurations['ServerHostName']
         self.ServerPort = databaseConfigurations['ServerPortNumber']
