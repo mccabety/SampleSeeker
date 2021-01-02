@@ -48,7 +48,7 @@ class MainWindow(QWidget):
         self.dataHeaderLabels = ['PrimaryKey', 'ID', 'Age (Weeks)', 'Location',' Genotype', 'Birth Date', 'Sac Date']
 
         self.searchComboBox = QtWidgets.QComboBox()
-        self.searchComboBox.addItems(self.dataHeaderLabels)
+        self.searchComboBox.addItems( [headerLabel for headerLabel in self.dataHeaderLabels if headerLabel != 'PrimaryKey'])
 
         self.searchTextBox = QtWidgets.QLineEdit()
 
