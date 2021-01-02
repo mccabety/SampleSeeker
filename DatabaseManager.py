@@ -16,16 +16,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # DatabaseManager.py
 
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime
+# Note: Requires version 1.4+
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from ConfigurationManager import ConfigurationManager
 
-class InventoryItem:
-    def __init__(self, age = 0, location = '', genotype = '', birthDate = datetime.now(), sacDate = datetime.now()):
-        self.Age = age
-        self.Location = location
-        self.Genotype = genotype
-        self.BirthDate = birthDate
-        self.SacDate = sacDate
+
+Base = declarative_base()
+
+class InventoryItem(Base):
+    __tablename__ = 'InventoryItems'
+
+    PrimaryKey = Column(Integer, primary_key=True)
+    InventoryId =  Column(Integer)
+    Age = Column(Integer)
+    Location = Column(String(500))
+    Genotype = Column(String(250))
+    BirthDate = Column(DateTime)
+    SacDate = Column(DateTime)
+
+    def __repr__(self):
+        return "<InventoryItem(PrimaryKey='%s', InventoryId='%s', Age='%s', Location='%s', Genotype='%s', BirthDate='%s', SacDate='%s')>" % (
+            self.PrimaryKey, self.InventoryId, self.Age, self.Location, self.Genotype, self.BirthDate, self.SacDate)
 
 class DatabaseManager:
     def __init__(self):
@@ -47,89 +60,47 @@ class DatabaseManager:
              + self.ServerHost + ':' + str(self.ServerPort)
               + '/' + self.DatabaseName)
 
+        Session = sessionmaker(bind=self.engine)
+
+        self.session = Session()
 
     def Test(self):
-
-        self.DatabaseName = ''
-
-        # Enter in credentials here:
-        self.ServerUserName = ''
-        self.ServerPassword = ''
-
-        self.engine = create_engine(
-        'mysql://' + self.ServerUserName + 
-        ':' + self.ServerPassword + '@'
-            + self.ServerHost + ':' + str(self.ServerPort)
-            + '/' + self.DatabaseName)
-
         self.CreateTables()
 
-        newInventoryItem = InventoryItem()
+        newInventoryItem = InventoryItem(InventoryId = 4324, Age=4, Location="Lab Z", Genotype = 'X-12', BirthDate = datetime.now())
+        self.InsertInventoryItem(newInventoryItem)
+
+        newInventoryItem = InventoryItem(InventoryId = 765, Age=4, Location="Lab Z", Genotype = 'X-12', BirthDate = datetime(2020,5,3), SacDate = datetime(2020,10,5))
         self.InsertInventoryItem(newInventoryItem)
 
         results = self.GetAllInventoryItems()
 
         for result in results:
-            print(result)  
+            print(result)
 
     def CreateTables(self):
-        meta = MetaData()
-
-        if not self.engine.dialect.has_table(self.engine, "Inventory"):
+        if not self.engine.dialect.has_table(self.engine, "InventoryItems"):
             print('Attempting to create table...')
 
-            Inventory = Table(
-                'Inventory', meta, 
-                Column('Id', Integer, primary_key = True), 
-                Column('Age', Integer),
-                Column('Location', String(250)), 
-                Column('Genotype', String(250)), 
-                Column('BirthDate', DateTime), 
-                Column('SacDate', DateTime),
-            )
-            
-            meta.create_all(self.engine)
-
+            Base.metadata.create_all(self.engine)
 
             print('ATable creatation complete!')
         else:
             print('Tables already created')
 
     def InsertInventoryItem(self, inventoryItem):
-        metaData = MetaData()
+        self.session.add(inventoryItem)
 
-        metaData.reflect(bind=self.engine)
+        self.session.commit()
 
-        Inventory = metaData.tables['Inventory']
-
-
-        valuesToInsert = Inventory.insert()
-        valuesToInsert = Inventory.insert().values(
-                Age = inventoryItem.Age,
-                Location = inventoryItem.Location,
-                Genotype = inventoryItem.Genotype,
-                BirthDate = inventoryItem.BirthDate,
-                SacDate = inventoryItem.SacDate)
-
-        connection = self.engine.connect()
-
-        result = connection.execute(valuesToInsert)
-
-    # todo: Improve this method
-    def ConvertResultsProxyToDictionary(self, rawResults):
-        results = []
-        for result in rawResults:
-            results.append(dict(zip(result.keys(), result)))
-        return results
+    def DeleteInventoryItems(self, itemsToDelete):
+        for item in itemsToDelete:
+            self.session.query(InventoryItem).filter(InventoryItem.PrimaryKey == item.PrimaryKey).delete()
+        self.session.commit()   
 
     def GetAllInventoryItems(self):
-        selectAllQuery = 'SELECT * FROM Inventory'
-        
-        inventoryEntries = self.engine.execute(selectAllQuery)
-
-        return self.ConvertResultsProxyToDictionary(inventoryEntries)
+        return self.session.query(InventoryItem).all()
 
 if __name__ == '__main__':
     dbManager = DatabaseManager()
-
     dbManager.Test()
