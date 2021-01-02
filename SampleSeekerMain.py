@@ -102,7 +102,10 @@ class MainWindow(QWidget):
         # Load inventory items from database 
         data = []
         for item in self.databaseManager.GetAllInventoryItems():
-            data.append([item.PrimaryKey, item.InventoryId, item.Age, item.Location, item.Genotype, item.BirthDate, item.SacDate])
+            age = 0
+            if item.BirthDate:
+                age = (item.SacDate - item.BirthDate).days//7 if item.SacDate else (datetime.datetime.now() - item.BirthDate).days//7
+            data.append([item.PrimaryKey, item.InventoryId, age, item.Location, item.Genotype, item.BirthDate, item.SacDate])
  
         self.InventoryDisplayModel = InventoryDisplayModel(data)
 
@@ -192,10 +195,20 @@ class AddInventoryItemWindow(QWidget):
 
 
         self.sacDateSection = QtWidgets.QHBoxLayout()
+        self.sacDateToggleButton = QPushButton("Sac Date?")
+        self.sacDateToggleButton.setCheckable(True)
+        self.sacDateToggleButton.clicked.connect(self.SacDateToggled)
+
         self.sacDateLabel = QtWidgets.QLabel('Sac Date: ')
         self.sacDateInput = QtWidgets.QDateEdit()
+        self.sacDateLabel.setVisible(False)
+        self.sacDateInput.setVisible(False)
+        self.sacValueProvided = False
+        
+        self.sacDateSection.addWidget(self.sacDateToggleButton)
         self.sacDateSection.addWidget(self.sacDateLabel)
         self.sacDateSection.addWidget(self.sacDateInput)
+        
 
 
 
@@ -235,11 +248,22 @@ class AddInventoryItemWindow(QWidget):
         self.birthDateInput.setDate(datetime.date.today())
         self.sacDateInput.setDate(datetime.date.today())
 
+    def SacDateToggled(self):
+        if self.sacValueProvided:
+            self.sacDateLabel.setVisible(False)
+            self.sacDateInput.setVisible(False)
+            self.sacValueProvided = False
+        else:
+            self.sacDateLabel.setVisible(True)
+            self.sacDateInput.setVisible(True)
+            self.sacValueProvided = True
+
     def AddButtonClicked(self):
         
         inventoryItemToAdd = InventoryItem(
             InventoryId = self.inventoryIdInput.text(), Age = 34, Location = self.locationInput.text(),
-            Genotype = self.genotypeInput.text(), BirthDate = self.birthDateInput.date().toPyDate(), SacDate = self.sacDateInput.date().toPyDate())
+            Genotype = self.genotypeInput.text(), BirthDate = self.birthDateInput.date().toPyDate(),
+            SacDate = self.sacDateInput.date().toPyDate() if self.sacValueProvided else None)
 
         self.databaseManager.InsertInventoryItem(inventoryItemToAdd)
         self.parent.RefreshInventoryTable()
