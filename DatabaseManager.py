@@ -30,18 +30,14 @@ class InventoryItem(Base):
 
     PrimaryKey = Column(Integer, primary_key=True)
     InventoryId =  Column(Integer)
-
-    # Todo: Remove from DB, make display only field
-    # Age (in weeks) = current date - birthdate if sacdate is NULL, else current date - sacdate
-    Age = Column(Integer)
     Location = Column(String(500))
     Genotype = Column(String(250))
     BirthDate = Column(DateTime)
     SacDate = Column(DateTime)
 
     def __repr__(self):
-        return "<InventoryItem(PrimaryKey='%s', InventoryId='%s', Age='%s', Location='%s', Genotype='%s', BirthDate='%s', SacDate='%s')>" % (
-            self.PrimaryKey, self.InventoryId, self.Age, self.Location, self.Genotype, self.BirthDate, self.SacDate)
+        return "<InventoryItem(PrimaryKey='%s', InventoryId='%s', Location='%s', Genotype='%s', BirthDate='%s', SacDate='%s')>" % (
+            self.PrimaryKey, self.InventoryId, self.Location, self.Genotype, self.BirthDate, self.SacDate)
 
 class DatabaseManager:
     def __init__(self):
@@ -70,10 +66,10 @@ class DatabaseManager:
     def Test(self):
         self.CreateTables()
 
-        newInventoryItem = InventoryItem(InventoryId = 4324, Age=4, Location="Lab Z", Genotype = 'X-12', BirthDate = datetime.now())
+        newInventoryItem = InventoryItem(InventoryId = 4324, Location="Lab Z", Genotype = 'X-12', BirthDate = datetime.now())
         self.InsertInventoryItem(newInventoryItem)
 
-        newInventoryItem = InventoryItem(InventoryId = 765, Age=4, Location="Lab Z", Genotype = 'X-12', BirthDate = datetime(2020,5,3), SacDate = datetime(2020,10,5))
+        newInventoryItem = InventoryItem(InventoryId = 765, Location="Lab Z", Genotype = 'X-12', BirthDate = datetime(2020,5,3), SacDate = datetime(2020,10,5))
         self.InsertInventoryItem(newInventoryItem)
 
         results = self.GetAllInventoryItems()

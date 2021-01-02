@@ -152,9 +152,9 @@ class MainWindow(QWidget):
             for item in itemsToDelete:
                 inventoryItems.append( InventoryItem(
                     PrimaryKey = model.index(item.row(),0).data(), InventoryId = model.index(item.row(),1).data(),
-                    Age = model.index(item.row(),2).data(), Location = model.index(item.row(),3).data(),
-                    Genotype = model.index(item.row(),4).data(), BirthDate = model.index(item.row(),5).data(),
-                    SacDate = model.index(item.row(),6).data() ) )
+                    Location = model.index(item.row(),2).data(),
+                    Genotype = model.index(item.row(),3).data(), BirthDate = model.index(item.row(),4).data(),
+                    SacDate = model.index(item.row(),5).data() ) )
             
             self.databaseManager.DeleteInventoryItems(inventoryItems)
 
@@ -261,7 +261,7 @@ class AddInventoryItemWindow(QWidget):
     def AddButtonClicked(self):
         
         inventoryItemToAdd = InventoryItem(
-            InventoryId = self.inventoryIdInput.text(), Age = 34, Location = self.locationInput.text(),
+            InventoryId = self.inventoryIdInput.text(), Location = self.locationInput.text(),
             Genotype = self.genotypeInput.text(), BirthDate = self.birthDateInput.date().toPyDate(),
             SacDate = self.sacDateInput.date().toPyDate() if self.sacValueProvided else None)
 
