@@ -30,6 +30,9 @@ class InventoryItem(Base):
 
     PrimaryKey = Column(Integer, primary_key=True)
     InventoryId =  Column(Integer)
+
+    # Todo: Remove from DB, make display only field
+    # Age (in weeks) = current date - birthdate if sacdate is NULL, else current date - sacdate
     Age = Column(Integer)
     Location = Column(String(500))
     Genotype = Column(String(250))

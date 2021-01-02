@@ -65,7 +65,8 @@ class MainWindow(QWidget):
         verticalBox = QtWidgets.QVBoxLayout()
 
         searchButton = QtWidgets.QPushButton("Search")
-        clearSearchButton = QtWidgets.QPushButton("Clear")
+        clearSearchButton = QtWidgets.QPushButton("Reset")
+        clearSearchButton.clicked.connect(self.RefreshInventoryTable)
 
         searchLayout = QtWidgets.QHBoxLayout()
         searchLayout.addWidget(self.searchComboBox)
@@ -110,6 +111,9 @@ class MainWindow(QWidget):
 
         self.table.setModel(self.InventoryDisplayModel)
 
+    def closeEvent(self, event):
+        print("Child window closed properly")
+
     def AddButtonClicked(self):
         self.showAddItemDialog()
 
@@ -117,17 +121,10 @@ class MainWindow(QWidget):
         self.showDeleteItemDialog()
 
     def showAddItemDialog(self):
-        msgBox = QtWidgets.QMessageBox()
-        msgBox.setIcon(QtWidgets.QMessageBox.Information)
-        msgBox.setWindowTitle("Add Item Menu")
-        msgBox.setText("Add Button Clicked")
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        self.addInventoryItemWindow = AddInventoryItemWindow(self, self.databaseManager)
+        self.addInventoryItemWindow.show()
+        self.RefreshInventoryTable()
 
-        returnValue = msgBox.exec()
-        if returnValue == QtWidgets.QMessageBox.Ok:
-
-            self.table
-            print('OK clicked')
 
     def showDeleteItemDialog(self):
 
@@ -160,6 +157,99 @@ class MainWindow(QWidget):
 
             self.RefreshInventoryTable()
  
+class AddInventoryItemWindow(QWidget):
+    def __init__(self,parent, databaseManager):
+        super().__init__()
+
+        self.parent = parent
+        self.databaseManager = databaseManager
+
+        self.verticalBox = QtWidgets.QVBoxLayout()
+
+        self.inventoryIdSection = QtWidgets.QHBoxLayout()
+        self.inventoryIdLabel = QtWidgets.QLabel('ID: ')
+        self.inventoryIdInput = QtWidgets.QLineEdit()
+        self.inventoryIdSection.addWidget(self.inventoryIdLabel)
+        self.inventoryIdSection.addWidget(self.inventoryIdInput)
+
+        self.locationSection = QtWidgets.QHBoxLayout()
+        self.locationLabel = QtWidgets.QLabel('Location: ')
+        self.locationInput = QtWidgets.QLineEdit()
+        self.locationSection.addWidget(self.locationLabel)
+        self.locationSection.addWidget(self.locationInput)
+
+        self.genotypeSection = QtWidgets.QHBoxLayout()
+        self.genotypeLabel = QtWidgets.QLabel('Genotype: ')
+        self.genotypeInput = QtWidgets.QLineEdit()
+        self.genotypeSection.addWidget(self.genotypeLabel)
+        self.genotypeSection.addWidget(self.genotypeInput)
+
+        self.birthDateSection = QtWidgets.QHBoxLayout()
+        self.birthDateLabel = QtWidgets.QLabel('Birth Date: ')
+        self.birthDateInput = QtWidgets.QDateEdit()
+        self.birthDateSection.addWidget(self.birthDateLabel)
+        self.birthDateSection.addWidget(self.birthDateInput)
+
+
+        self.sacDateSection = QtWidgets.QHBoxLayout()
+        self.sacDateLabel = QtWidgets.QLabel('Sac Date: ')
+        self.sacDateInput = QtWidgets.QDateEdit()
+        self.sacDateSection.addWidget(self.sacDateLabel)
+        self.sacDateSection.addWidget(self.sacDateInput)
+
+
+
+        self.buttonSection = QtWidgets.QHBoxLayout()
+        self.addButton = QtWidgets.QPushButton("Add")
+        self.addButton.clicked.connect(self.AddButtonClicked)
+
+        self.clearButton = QtWidgets.QPushButton("Clear")
+        self.clearButton.clicked.connect(self.ClearButtonClicked)
+
+        self.buttonSection.addWidget(self.addButton)
+        self.buttonSection.addWidget(self.clearButton)
+
+
+
+        self.verticalBox.addLayout(self.inventoryIdSection)
+        self.verticalBox.addLayout(self.locationSection)
+        self.verticalBox.addLayout(self.genotypeSection)
+        self.verticalBox.addLayout(self.birthDateSection)
+        self.verticalBox.addLayout(self.sacDateSection)
+
+        self.verticalBox.addLayout(self.buttonSection)
+
+
+        self.setLayout(self.verticalBox)
+
+        self.setGeometry(300, 300, 500, 300)
+        self.setWindowTitle('Add New Inventory Item')
+        
+        self.ClearInput()
+    
+    def ClearInput(self):
+        self.inventoryIdInput.setText('')
+        self.locationInput.setText('')
+        self.locationInput.setText('')
+        self.genotypeInput.setText('')
+        self.birthDateInput.setDate(datetime.date.today())
+        self.sacDateInput.setDate(datetime.date.today())
+
+    def AddButtonClicked(self):
+        
+        inventoryItemToAdd = InventoryItem(
+            InventoryId = self.inventoryIdInput.text(), Age = 34, Location = self.locationInput.text(),
+            Genotype = self.genotypeInput.text(), BirthDate = self.birthDateInput.date().toPyDate(), SacDate = self.sacDateInput.date().toPyDate())
+
+        self.databaseManager.InsertInventoryItem(inventoryItemToAdd)
+        self.parent.RefreshInventoryTable()
+        self.close()
+
+    def ClearButtonClicked(self):
+        self.ClearInput()
+
+
+
 def main():
     app=QtWidgets.QApplication(sys.argv)
     window=MainWindow()
