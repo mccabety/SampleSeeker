@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 import datetime
 
-from DatabaseManager import DatabaseManager, InventoryItem
+from DatabaseManager import DatabaseManager, InventoryItem, Sample
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
@@ -86,7 +86,7 @@ class MainWindow(QWidget):
         deleteButton.clicked.connect(self.DeleteButtonClicked)
 
         viewSamplesButton = QtWidgets.QPushButton("View Samples")
-        viewSamplesButton.clicked.connect(self.ViewSamplesuttonClicked)
+        viewSamplesButton.clicked.connect(self.ViewSamplesButtonClicked)
 
         buttonsLayout = QtWidgets.QHBoxLayout()
         buttonsLayout.addWidget(addButton)
@@ -130,7 +130,7 @@ class MainWindow(QWidget):
     def DeleteButtonClicked(self):
         self.showDeleteItemDialog()
     
-    def ViewSamplesuttonClicked(self):
+    def ViewSamplesButtonClicked(self):
         selectedItems = self.table.selectionModel().selectedRows()
         itemCount = len(selectedItems)
 
@@ -144,19 +144,17 @@ class MainWindow(QWidget):
                     Location = model.index(item.row(),2).data(),
                     Genotype = model.index(item.row(),3).data(), BirthDate = model.index(item.row(),4).data(),
                     SacDate = model.index(item.row(),5).data() ) 
-       
-        self.viewEditSamplesWindow = ViewEditSamplesWindow(self, self.databaseManager, relatedInventoryItem)
-        self.viewEditSamplesWindow.show()
-        self.RefreshInventoryTable()
+        
+        self.hide()
+        self.viewSamplesWindow = ViewSamplesWindow(self, self.databaseManager, relatedInventoryItem)
+        self.viewSamplesWindow.show()
 
     def showAddItemDialog(self):
+        self.hide()
         self.addInventoryItemWindow = AddInventoryItemWindow(self, self.databaseManager)
         self.addInventoryItemWindow.show()
-        self.RefreshInventoryTable()
-
 
     def showDeleteItemDialog(self):
-
         itemsToDelete = self.table.selectionModel().selectedRows()
         itemCount = len(itemsToDelete)
 
@@ -298,7 +296,7 @@ class AddInventoryItemWindow(QWidget):
     def ClearButtonClicked(self):
         self.ClearInput()
 
-class ViewEditSamplesWindow(QWidget):
+class ViewSamplesWindow(QWidget):
     def __init__(self, parent, databaseManager, relatedInventoryItem):
         super().__init__()
     
@@ -342,13 +340,45 @@ class ViewEditSamplesWindow(QWidget):
         self.setWindowTitle('View and Edit Samples')
 
     def AddButtonClicked(self):
-        pass
+        self.addSampleWindow = AddSampleWindow(self, self.databaseManager, self.relatedInventoryItem)
+        self.addSampleWindow.show()
 
     def EditButtonClicked(self):
         pass
 
     def DeleteButtonClicked(self):
-        pass
+        self.showDeleteSampleDialog()
+    
+    def showDeleteSampleDialog(self):
+
+        itemsToDelete = self.table.selectionModel().selectedRows()
+        itemCount = len(itemsToDelete)
+
+        if(itemCount == 0):
+            return
+
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setIcon(QtWidgets.QMessageBox.Question)
+        msgBox.setWindowTitle("Warning")
+        msgBox.setText("Delete selected %d samples?" % itemCount)
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+        returnValue = msgBox.exec()
+        if returnValue == QtWidgets.QMessageBox.Ok:
+            samples = []
+            model = self.table.model()
+
+            # Todo: should the entire object be sent to the database deletion method?
+            for sample in itemsToDelete:
+                samples.append( Sample(
+                    PrimaryKey = model.index(sample.row(),0).data(), SampleId = model.index(sample.row(),1).data(),
+                    Name = model.index(sample.row(),2).data(),
+                    Location = model.index(sample.row(),3).data(), Description = model.index(sample.row(),4).data(),
+                    CreationDate = model.index(sample.row(),5).data(), AssociatedInventoryItem = model.index(sample.row(),6).data() ) )
+            
+            self.databaseManager.DeleteSamples(samples)
+
+            self.RefreshSampleTable()
 
     def RefreshSampleTable(self):
         # Load inventory items from database 
@@ -365,6 +395,100 @@ class ViewEditSamplesWindow(QWidget):
         self.tableDisplayModel.setVerticalHeaderLabels('' for item in data)
 
         self.table.setModel(self.tableDisplayModel)
+
+    def closeEvent(self, event):
+        self.parent.show()
+
+class AddSampleWindow(QWidget):
+    def __init__(self,parent, databaseManager, relatedInventoryItem):
+        super().__init__()
+
+        self.parent = parent
+        self.databaseManager = databaseManager
+        self.relatedInventoryItem = relatedInventoryItem
+
+        self.verticalBox = QtWidgets.QVBoxLayout()
+
+        self.sampleIdSection = QtWidgets.QHBoxLayout()
+        self.sampleIdLabel = QtWidgets.QLabel('ID: ')
+        self.sampleIdInput = QtWidgets.QLineEdit()
+        self.sampleIdSection.addWidget(self.sampleIdLabel)
+        self.sampleIdSection.addWidget(self.sampleIdInput)
+
+        self.nameSection = QtWidgets.QHBoxLayout()
+        self.nameLabel = QtWidgets.QLabel('Name: ')
+        self.nameInput = QtWidgets.QLineEdit()
+        self.nameSection.addWidget(self.nameLabel)
+        self.nameSection.addWidget(self.nameInput)
+
+
+        self.locationSection = QtWidgets.QHBoxLayout()
+        self.locationLabel = QtWidgets.QLabel('Location: ')
+        self.locationInput = QtWidgets.QLineEdit()
+        self.locationSection.addWidget(self.locationLabel)
+        self.locationSection.addWidget(self.locationInput)
+
+        self.descriptionSection = QtWidgets.QHBoxLayout()
+        self.descriptionLabel = QtWidgets.QLabel('Description: ')
+        self.descriptionInput = QtWidgets.QLineEdit()
+        self.descriptionSection.addWidget(self.descriptionLabel)
+        self.descriptionSection.addWidget(self.descriptionInput)
+
+
+        self.creationDateSection = QtWidgets.QHBoxLayout()
+        self.creationDateLabel = QtWidgets.QLabel('Creation Date: ')
+        self.creationDateInput = QtWidgets.QDateEdit()
+        self.creationDateSection.addWidget(self.creationDateLabel)
+        self.creationDateSection.addWidget(self.creationDateInput)
+
+
+        self.buttonSection = QtWidgets.QHBoxLayout()
+        self.addButton = QtWidgets.QPushButton("Add")
+        self.addButton.clicked.connect(self.AddButtonClicked)
+
+        self.clearButton = QtWidgets.QPushButton("Clear")
+        self.clearButton.clicked.connect(self.ClearButtonClicked)
+
+        self.buttonSection.addWidget(self.addButton)
+        self.buttonSection.addWidget(self.clearButton)
+
+
+
+        self.verticalBox.addLayout(self.sampleIdSection)
+        self.verticalBox.addLayout(self.nameSection)
+        self.verticalBox.addLayout(self.locationSection)
+        self.verticalBox.addLayout(self.descriptionSection)
+        self.verticalBox.addLayout(self.creationDateSection)
+
+        self.verticalBox.addLayout(self.buttonSection)
+
+
+        self.setLayout(self.verticalBox)
+
+        self.setGeometry(300, 300, 500, 300)
+        self.setWindowTitle('Add New Sample')
+        
+        self.ClearInput()
+    
+    def ClearInput(self):
+        self.sampleIdInput.setText('')
+        self.nameInput.setText('')
+        self.locationInput.setText('')
+        self.descriptionInput.setText('')
+        self.creationDateInput.setDate(datetime.date.today())
+
+    def AddButtonClicked(self):
+        
+        sampleToAdd = Sample(SampleId = self.sampleIdInput.text(), Name = self.nameInput.text(),
+            Location = self.locationInput.text(), Description = self.descriptionInput.text(),
+            CreationDate = self.creationDateInput.date().toPyDate(),  AssociatedInventoryItem = self.relatedInventoryItem.PrimaryKey)
+
+        self.databaseManager.InsertSample(sampleToAdd)
+        self.parent.RefreshSampleTable()
+        self.close()
+
+    def ClearButtonClicked(self):
+        self.ClearInput()
 
 def main():
     app=QtWidgets.QApplication(sys.argv)
