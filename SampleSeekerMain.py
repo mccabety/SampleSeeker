@@ -25,7 +25,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QPushButton,
                              QHBoxLayout, QVBoxLayout, QApplication)
 
-class InventoryDisplayModel(QtGui.QStandardItemModel):
+class TableDisplayModel(QtGui.QStandardItemModel):
     def __init__(self, data, parent=None):
         QtGui.QStandardItemModel.__init__(self, parent)
         self._data = data
@@ -39,7 +39,10 @@ class InventoryDisplayModel(QtGui.QStandardItemModel):
         return len(self._data)
 
     def columnCount(self, parent=None):
-        return len(self._data[0])
+        if self.rowCount() > 0:
+            return len(self._data[0])
+        else:
+            return 0
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -82,10 +85,14 @@ class MainWindow(QWidget):
         deleteButton = QtWidgets.QPushButton("Delete")
         deleteButton.clicked.connect(self.DeleteButtonClicked)
 
+        viewSamplesButton = QtWidgets.QPushButton("View Samples")
+        viewSamplesButton.clicked.connect(self.ViewSamplesuttonClicked)
+
         buttonsLayout = QtWidgets.QHBoxLayout()
         buttonsLayout.addWidget(addButton)
         buttonsLayout.addWidget(editButton)
         buttonsLayout.addWidget(deleteButton)
+        buttonsLayout.addWidget(viewSamplesButton)
 
         verticalBox.addLayout(searchLayout)
         verticalBox.addWidget(self.table)
@@ -107,12 +114,12 @@ class MainWindow(QWidget):
                 age = (item.SacDate - item.BirthDate).days//7 if item.SacDate else (datetime.datetime.now() - item.BirthDate).days//7
             data.append([item.PrimaryKey, item.InventoryId, age, item.Location, item.Genotype, item.BirthDate, item.SacDate])
  
-        self.InventoryDisplayModel = InventoryDisplayModel(data)
+        self.tableDisplayModel = TableDisplayModel(data)
 
-        self.InventoryDisplayModel.setHorizontalHeaderLabels(self.dataHeaderLabels)
-        self.InventoryDisplayModel.setVerticalHeaderLabels('' for item in data)
+        self.tableDisplayModel.setHorizontalHeaderLabels(self.dataHeaderLabels)
+        self.tableDisplayModel.setVerticalHeaderLabels('' for item in data)
 
-        self.table.setModel(self.InventoryDisplayModel)
+        self.table.setModel(self.tableDisplayModel)
 
     def closeEvent(self, event):
         print("Child window closed properly")
@@ -122,6 +129,25 @@ class MainWindow(QWidget):
 
     def DeleteButtonClicked(self):
         self.showDeleteItemDialog()
+    
+    def ViewSamplesuttonClicked(self):
+        selectedItems = self.table.selectionModel().selectedRows()
+        itemCount = len(selectedItems)
+
+        if( itemCount != 1 ):
+            return
+        model = self.table.model()
+        item = selectedItems[0]
+
+        relatedInventoryItem = InventoryItem(
+                    PrimaryKey = model.index(item.row(),0).data(), InventoryId = model.index(item.row(),1).data(),
+                    Location = model.index(item.row(),2).data(),
+                    Genotype = model.index(item.row(),3).data(), BirthDate = model.index(item.row(),4).data(),
+                    SacDate = model.index(item.row(),5).data() ) 
+       
+        self.viewEditSamplesWindow = ViewEditSamplesWindow(self, self.databaseManager, relatedInventoryItem)
+        self.viewEditSamplesWindow.show()
+        self.RefreshInventoryTable()
 
     def showAddItemDialog(self):
         self.addInventoryItemWindow = AddInventoryItemWindow(self, self.databaseManager)
@@ -272,7 +298,73 @@ class AddInventoryItemWindow(QWidget):
     def ClearButtonClicked(self):
         self.ClearInput()
 
+class ViewEditSamplesWindow(QWidget):
+    def __init__(self, parent, databaseManager, relatedInventoryItem):
+        super().__init__()
+    
+        self.parent = parent
+        self.databaseManager = databaseManager
+        self.relatedInventoryItem = relatedInventoryItem
 
+        self.dataHeaderLabels = ['PrimaryKey', 'ID', 'Name', 'Location',' Description', 'Creation Date', 'InventoryId']
+
+
+        self.table = QtWidgets.QTableView()
+
+        self.RefreshSampleTable()
+
+        self.table.resizeColumnsToContents()
+        self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.table.setColumnHidden(0, True)
+
+
+        self.buttonSection = QtWidgets.QHBoxLayout()
+        self.addButton = QtWidgets.QPushButton("Add")
+        self.addButton.clicked.connect(self.AddButtonClicked)
+
+        self.editButton = QtWidgets.QPushButton("Edit")
+        self.editButton.clicked.connect(self.EditButtonClicked)
+
+        self.deleteButton = QtWidgets.QPushButton("Delete")
+        self.deleteButton.clicked.connect(self.DeleteButtonClicked)
+
+        self.buttonSection.addWidget(self.addButton)
+        self.buttonSection.addWidget(self.editButton)
+        self.buttonSection.addWidget(self.deleteButton)
+
+        self.verticalBox = QtWidgets.QVBoxLayout()
+
+        self.verticalBox.addWidget(self.table)
+        self.verticalBox.addLayout(self.buttonSection)
+
+        self.setLayout(self.verticalBox)
+        self.setGeometry(300, 300, 700, 800)
+        self.setWindowTitle('View and Edit Samples')
+
+    def AddButtonClicked(self):
+        pass
+
+    def EditButtonClicked(self):
+        pass
+
+    def DeleteButtonClicked(self):
+        pass
+
+    def RefreshSampleTable(self):
+        # Load inventory items from database 
+        data = []
+
+        samples = self.databaseManager.GetAllSamplesForInventoryItem(inventoryItem = self.relatedInventoryItem)
+
+        for sample in samples:
+            data.append([sample.PrimaryKey, sample.SampleId, sample.Name, sample.Location, sample.Description, sample.CreationDate, sample.AssociatedInventoryItem])
+
+        self.tableDisplayModel = TableDisplayModel(data)
+
+        self.tableDisplayModel.setHorizontalHeaderLabels(self.dataHeaderLabels)
+        self.tableDisplayModel.setVerticalHeaderLabels('' for item in data)
+
+        self.table.setModel(self.tableDisplayModel)
 
 def main():
     app=QtWidgets.QApplication(sys.argv)

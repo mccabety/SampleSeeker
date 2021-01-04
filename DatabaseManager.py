@@ -15,7 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # DatabaseManager.py
 
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime, ForeignKey
 # Note: Requires version 1.4+
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -38,6 +38,24 @@ class InventoryItem(Base):
     def __repr__(self):
         return "<InventoryItem(PrimaryKey='%s', InventoryId='%s', Location='%s', Genotype='%s', BirthDate='%s', SacDate='%s')>" % (
             self.PrimaryKey, self.InventoryId, self.Location, self.Genotype, self.BirthDate, self.SacDate)
+
+class Sample(Base):
+    __tablename__ = 'Samples'
+
+    PrimaryKey = Column(Integer, primary_key=True)
+    SampleId =  Column(Integer)
+    Name = Column(String(260))
+    Type = Column(String(260))
+    Location = Column(String(260))
+    Description = Column(String(1000))
+    CreationDate = Column(DateTime)
+
+    AssociatedInventoryItem = Column(Integer, ForeignKey('InventoryItems.PrimaryKey'))
+
+
+    def __repr__(self):
+        return "<Sample(PrimaryKey='%s', SampleId='%s', Name='%s', Location='%s',  Description='%s', CreationDate='%s', InventoryId='%s)>" % (
+            self.PrimaryKey, self.SampleId, self.Name, self.Location, self.Description, self.CreationDate, self.InventoryId)
 
 class DatabaseManager:
     def __init__(self):
@@ -74,6 +92,12 @@ class DatabaseManager:
 
         results = self.GetAllInventoryItems()
 
+        newSample = Sample(SampleId = 56436, Name = 'Cell Culture A', Location = "Lab RED", Description='A cool sample', CreationDate = datetime(2020,5,3), AssociatedInventoryItem = results[0].PrimaryKey)
+
+        self.InsertSample(newSample)
+
+        results = self.GetAllInventoryItems()
+
         for result in results:
             print(result)
 
@@ -87,6 +111,7 @@ class DatabaseManager:
         else:
             print('Tables already created')
 
+    # Todo: All of the DB calls could easily be made generic.
     def InsertInventoryItem(self, inventoryItem):
         self.session.add(inventoryItem)
 
@@ -96,9 +121,22 @@ class DatabaseManager:
         for item in itemsToDelete:
             self.session.query(InventoryItem).filter(InventoryItem.PrimaryKey == item.PrimaryKey).delete()
         self.session.commit()   
+    
+    def InsertSample(self, sample):
+        self.session.add(sample)
+
+        self.session.commit()
+
+    def DeleteSamples(self, itemsToDelete):
+        for item in itemsToDelete:
+            self.session.query(Sample).filter(Sample.PrimaryKey == item.PrimaryKey).delete()
+        self.session.commit()
 
     def GetAllInventoryItems(self):
         return self.session.query(InventoryItem).all()
+
+    def GetAllSamplesForInventoryItem(self, inventoryItem):
+        return self.session.query(Sample).filter(Sample.AssociatedInventoryItem == inventoryItem.PrimaryKey).all()
 
 if __name__ == '__main__':
     dbManager = DatabaseManager()
