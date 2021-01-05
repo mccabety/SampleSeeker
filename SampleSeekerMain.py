@@ -296,6 +296,9 @@ class AddInventoryItemWindow(QWidget):
     def ClearButtonClicked(self):
         self.ClearInput()
 
+    def closeEvent(self, event):
+        self.parent.show()
+
 class ViewSamplesWindow(QWidget):
     def __init__(self, parent, databaseManager, relatedInventoryItem):
         super().__init__()
