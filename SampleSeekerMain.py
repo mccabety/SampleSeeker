@@ -81,6 +81,7 @@ class MainWindow(QWidget):
         addButton.clicked.connect(self.AddButtonClicked)
 
         editButton = QtWidgets.QPushButton("Edit")
+        editButton.clicked.connect(self.EditButtonClicked)
 
         deleteButton = QtWidgets.QPushButton("Delete")
         deleteButton.clicked.connect(self.DeleteButtonClicked)
@@ -130,24 +131,43 @@ class MainWindow(QWidget):
     def DeleteButtonClicked(self):
         self.showDeleteItemDialog()
     
-    def ViewSamplesButtonClicked(self):
-        selectedItems = self.table.selectionModel().selectedRows()
-        itemCount = len(selectedItems)
-
-        if( itemCount != 1 ):
+    def EditButtonClicked(self):
+        if( not self.IsOnlyOneItemSelected() ):
             return
+
+        self.hide()
+        self.editInventoryWindow = EditInventoryWindow(self, self.databaseManager, self.GetSelectedInventoryItem())
+        self.editInventoryWindow.show()
+    
+    def ViewSamplesButtonClicked(self):
+        if( not self.IsOnlyOneItemSelected() ):
+            return
+
+        self.hide()
+        self.viewSamplesWindow = ViewSamplesWindow(self, self.databaseManager, self.GetSelectedInventoryItem())
+        self.viewSamplesWindow.show()
+
+    def GetSelectedInventoryItem(self):
+        if( not self.IsOnlyOneItemSelected() ):
+            None
+
+        item = self.table.selectionModel().selectedRows()[0]
         model = self.table.model()
-        item = selectedItems[0]
 
         relatedInventoryItem = InventoryItem(
                     PrimaryKey = model.index(item.row(),0).data(), InventoryId = model.index(item.row(),1).data(),
-                    Location = model.index(item.row(),2).data(),
-                    Genotype = model.index(item.row(),3).data(), BirthDate = model.index(item.row(),4).data(),
-                    SacDate = model.index(item.row(),5).data() ) 
-        
-        self.hide()
-        self.viewSamplesWindow = ViewSamplesWindow(self, self.databaseManager, relatedInventoryItem)
-        self.viewSamplesWindow.show()
+                    # Skip 2, which maps to Age
+                    Location = model.index(item.row(),3).data(),
+                    Genotype = model.index(item.row(),4).data(), BirthDate = model.index(item.row(),5).data(),
+                    SacDate = model.index(item.row(),6).data() ) 
+
+        return relatedInventoryItem
+
+    def IsOnlyOneItemSelected(self):
+        selectedItems = self.table.selectionModel().selectedRows()
+        itemCount = len(selectedItems)
+
+        return False if itemCount != 1 else True
 
     def showAddItemDialog(self):
         self.hide()
@@ -267,7 +287,6 @@ class AddInventoryItemWindow(QWidget):
     def ClearInput(self):
         self.inventoryIdInput.setText('')
         self.locationInput.setText('')
-        self.locationInput.setText('')
         self.genotypeInput.setText('')
         self.birthDateInput.setDate(datetime.date.today())
         self.sacDateInput.setDate(datetime.date.today())
@@ -298,6 +317,22 @@ class AddInventoryItemWindow(QWidget):
 
     def closeEvent(self, event):
         self.parent.show()
+
+class EditInventoryWindow(AddInventoryItemWindow):
+    def __init__(self, parent, databaseManager, selectedInventoryItem):
+        super().__init__(parent, databaseManager)
+        self.inventoryIdInput.setText(selectedInventoryItem.InventoryId)
+        self.locationInput.setText(selectedInventoryItem.Location)
+        self.genotypeInput.setText(selectedInventoryItem.Genotype)
+        self.birthDateInput.setDate( self.GetDateFromString(selectedInventoryItem.BirthDate) )
+        
+        if(selectedInventoryItem.SacDate != 'None'):
+            self.sacDateInput.setDate(self.GetDateFromString(selectedInventoryItem.SacDate))
+            self.SacDateToggled()
+
+    def GetDateFromString(self, dateString):
+        return datetime.datetime.strptime(dateString, '%Y-%m-%d %H:%M:%S')
+
 
 class ViewSamplesWindow(QWidget):
     def __init__(self, parent, databaseManager, relatedInventoryItem):
