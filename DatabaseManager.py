@@ -50,12 +50,12 @@ class Sample(Base):
     Description = Column(String(1000))
     CreationDate = Column(DateTime)
 
-    AssociatedInventoryItem = Column(Integer, ForeignKey('InventoryItems.PrimaryKey'))
+    AssociatedInventoryItem = Column(Integer, ForeignKey('InventoryItems.PrimaryKey', ondelete='CASCADE'))
 
 
     def __repr__(self):
         return "<Sample(PrimaryKey='%s', SampleId='%s', Name='%s', Location='%s',  Description='%s', CreationDate='%s', InventoryId='%s)>" % (
-            self.PrimaryKey, self.SampleId, self.Name, self.Location, self.Description, self.CreationDate, self.InventoryId)
+            self.PrimaryKey, self.SampleId, self.Name, self.Location, self.Description, self.CreationDate, self.AssociatedInventoryItem)
 
 class DatabaseManager:
     def __init__(self):
@@ -117,6 +117,18 @@ class DatabaseManager:
 
         self.session.commit()
 
+    def EditInventoryItem(self, editedItem):
+        itemToEdit = self.session.query(InventoryItem).filter(InventoryItem.PrimaryKey == editedItem.PrimaryKey).one()
+        
+        itemToEdit.InventoryId = editedItem.InventoryId
+        itemToEdit.Location = editedItem.Location
+        itemToEdit.Genotype = editedItem.Genotype
+        itemToEdit.Location = editedItem.Location
+        itemToEdit.BirthDate = editedItem.BirthDate
+        itemToEdit.SacDate = editedItem.SacDate
+ 
+        self.session.commit()
+
     def DeleteInventoryItems(self, itemsToDelete):
         for item in itemsToDelete:
             self.session.query(InventoryItem).filter(InventoryItem.PrimaryKey == item.PrimaryKey).delete()
@@ -124,7 +136,19 @@ class DatabaseManager:
     
     def InsertSample(self, sample):
         self.session.add(sample)
+        
+        self.session.commit()
 
+    def EditSample(self, editedSample):
+        sampleToEdit = self.session.query(Sample).filter(Sample.PrimaryKey == editedSample.PrimaryKey).one()
+        
+        sampleToEdit.SampleId = editedSample.SampleId
+        sampleToEdit.Name = editedSample.Name
+        sampleToEdit.Type = editedSample.Type
+        sampleToEdit.Location = editedSample.Location
+        sampleToEdit.Description = editedSample.Description
+        sampleToEdit.CreationDate = editedSample.CreationDate
+ 
         self.session.commit()
 
     def DeleteSamples(self, itemsToDelete):

@@ -321,17 +321,37 @@ class AddInventoryItemWindow(QWidget):
 class EditInventoryWindow(AddInventoryItemWindow):
     def __init__(self, parent, databaseManager, selectedInventoryItem):
         super().__init__(parent, databaseManager)
-        self.inventoryIdInput.setText(selectedInventoryItem.InventoryId)
-        self.locationInput.setText(selectedInventoryItem.Location)
-        self.genotypeInput.setText(selectedInventoryItem.Genotype)
-        self.birthDateInput.setDate( self.GetDateFromString(selectedInventoryItem.BirthDate) )
+
+        self.selectedInventoryItem = selectedInventoryItem
         
-        if(selectedInventoryItem.SacDate != 'None'):
-            self.sacDateInput.setDate(self.GetDateFromString(selectedInventoryItem.SacDate))
+        self.DisplayCurrentSampleValues()
+
+        self.addButton.disconnect()
+        self.addButton.clicked.connect(self.SaveEdit)
+        self.addButton.setText('Save')
+
+    def DisplayCurrentSampleValues(self):
+        self.inventoryIdInput.setText(self.selectedInventoryItem.InventoryId)
+        self.locationInput.setText(self.selectedInventoryItem.Location)
+        self.genotypeInput.setText(self.selectedInventoryItem.Genotype)
+        self.birthDateInput.setDate( self.GetDateFromString(self.selectedInventoryItem.BirthDate) )
+        
+        if(self.selectedInventoryItem.SacDate != 'None'):
+            self.sacDateInput.setDate(self.GetDateFromString(self.selectedInventoryItem.SacDate))
             self.SacDateToggled()
 
     def GetDateFromString(self, dateString):
         return datetime.datetime.strptime(dateString, '%Y-%m-%d %H:%M:%S')
+    
+    def SaveEdit(self): 
+        inventoryItemToEdit = InventoryItem( PrimaryKey = self.selectedInventoryItem.PrimaryKey,
+            InventoryId = self.inventoryIdInput.text(), Location = self.locationInput.text(),
+            Genotype = self.genotypeInput.text(), BirthDate = self.birthDateInput.date().toPyDate(),
+            SacDate = self.sacDateInput.date().toPyDate() if self.sacValueProvided else None)
+
+        self.databaseManager.EditInventoryItem(inventoryItemToEdit)
+        self.parent.RefreshInventoryTable()
+        self.close()
 
 
 class ViewSamplesWindow(QWidget):
@@ -382,7 +402,31 @@ class ViewSamplesWindow(QWidget):
         self.addSampleWindow.show()
 
     def EditButtonClicked(self):
-        pass
+        if(not self.IsOneSampleSelected()):
+            return
+
+        self.selectedSample = self.GetSelectedSample()
+
+        self.editSamplesWindow = EditSamplesWindow(self, self.databaseManager, self.relatedInventoryItem, self.selectedSample)
+        self.editSamplesWindow.show()
+
+    def IsOneSampleSelected(self):
+        if(len(self.table.selectionModel().selectedRows()) != 1):
+            return False
+        return True
+
+    def GetSelectedSample(self):
+        if(not self.IsOneSampleSelected()):
+            None
+
+        sample = self.table.selectionModel().selectedRows()[0]
+        model = self.table.model()
+
+        return Sample(
+                    PrimaryKey = model.index(sample.row(),0).data(), SampleId = model.index(sample.row(),1).data(),
+                    Name = model.index(sample.row(),2).data(),
+                    Location = model.index(sample.row(),3).data(), Description = model.index(sample.row(),4).data(),
+                    CreationDate = model.index(sample.row(),5).data(), AssociatedInventoryItem = model.index(sample.row(),6).data() )
 
     def DeleteButtonClicked(self):
         self.showDeleteSampleDialog()
@@ -500,7 +544,6 @@ class AddSampleWindow(QWidget):
 
         self.verticalBox.addLayout(self.buttonSection)
 
-
         self.setLayout(self.verticalBox)
 
         self.setGeometry(300, 300, 500, 300)
@@ -516,7 +559,6 @@ class AddSampleWindow(QWidget):
         self.creationDateInput.setDate(datetime.date.today())
 
     def AddButtonClicked(self):
-        
         sampleToAdd = Sample(SampleId = self.sampleIdInput.text(), Name = self.nameInput.text(),
             Location = self.locationInput.text(), Description = self.descriptionInput.text(),
             CreationDate = self.creationDateInput.date().toPyDate(),  AssociatedInventoryItem = self.relatedInventoryItem.PrimaryKey)
@@ -527,6 +569,38 @@ class AddSampleWindow(QWidget):
 
     def ClearButtonClicked(self):
         self.ClearInput()
+
+class EditSamplesWindow(AddSampleWindow):
+    def __init__(self, parent, databaseManager, relatedInventoryItem, selectedSample):
+        super().__init__(parent, databaseManager, relatedInventoryItem)
+
+        self.selectedSample = selectedSample
+        
+        self.DisplayCurrentSampleValues()
+
+        self.addButton.disconnect()
+        self.addButton.clicked.connect(self.SaveEdit)
+        self.addButton.setText('Save')
+
+    def DisplayCurrentSampleValues(self):
+        self.sampleIdInput.setText(self.selectedSample.SampleId)
+        self.nameInput.setText(self.selectedSample.Name)
+        self.locationInput.setText(self.selectedSample.Location)
+        self.descriptionInput.setText(self.selectedSample.Description)
+        self.creationDateInput.setDate(self.GetDateFromString(self.selectedSample.CreationDate))
+
+    def GetDateFromString(self, dateString):
+        return datetime.datetime.strptime(dateString, '%Y-%m-%d %H:%M:%S')
+    
+    def SaveEdit(self): 
+        sampleToEdit = Sample(PrimaryKey = self.selectedSample.PrimaryKey, SampleId = self.sampleIdInput.text(), Name = self.nameInput.text(),
+            Location = self.locationInput.text(), Description = self.descriptionInput.text(),
+            CreationDate = self.creationDateInput.date().toPyDate(),  AssociatedInventoryItem = self.relatedInventoryItem.PrimaryKey)
+
+        self.databaseManager.EditSample(sampleToEdit)
+        self.parent.RefreshSampleTable()
+        self.close()
+
 
 def main():
     app=QtWidgets.QApplication(sys.argv)
