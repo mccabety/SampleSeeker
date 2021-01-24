@@ -18,8 +18,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 import datetime
 
-from DatabaseManager import DatabaseManager, InventoryItem, Sample
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QPushButton,
@@ -600,13 +598,3 @@ class EditSamplesWindow(AddSampleWindow):
         self.databaseManager.EditSample(sampleToEdit)
         self.parent.RefreshSampleTable()
         self.close()
-
-
-def main():
-    app=QtWidgets.QApplication(sys.argv)
-    window=MainWindow()
-    window.show()
-    app.exec_()
-
-if __name__ == '__main__':
-    main()
