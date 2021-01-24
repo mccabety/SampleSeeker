@@ -17,6 +17,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import json
 
+import os.path
+from os import path
+
 class ConfigurationManager:
     def __init__(self):
         self.configurations = {}
@@ -30,6 +33,10 @@ class ConfigurationManager:
     
     def GetDatabaseConfiguration(self):
         return self.configurations['DatabaseConfigurations']
+
+    def DoesConfigurationFileExist(self):
+        return path.exists('Configuration.json')
+
                 
 if __name__ == '__main__':
     configurationManager = ConfigurationManager()

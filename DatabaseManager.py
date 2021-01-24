@@ -58,8 +58,8 @@ class Sample(Base):
             self.PrimaryKey, self.SampleId, self.Name, self.Location, self.Description, self.CreationDate, self.AssociatedInventoryItem)
 
 class DatabaseManager:
-    def __init__(self):
-        self.configurationManager = ConfigurationManager()
+    def __init__(self, configurationManager):
+        self.configurationManager = configurationManager
         databaseConfigurations = self.configurationManager.GetDatabaseConfiguration()
         
         self.ServerHost = databaseConfigurations['ServerHostName']
