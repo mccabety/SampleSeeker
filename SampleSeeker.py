@@ -45,7 +45,7 @@ class TableDisplayModel(QtGui.QStandardItemModel):
             return 0
 
 class MainWindow(QWidget):
-    def __init__(self):
+    def __init__(self, databaseManager):
         super().__init__()
 
         self.dataHeaderLabels = ['PrimaryKey', 'ID', 'Age (Weeks)', 'Location',' Genotype', 'Birth Date', 'Sac Date']
@@ -57,7 +57,7 @@ class MainWindow(QWidget):
 
         self.table = QtWidgets.QTableView()
 
-        self.databaseManager = DatabaseManager()
+        self.databaseManager = databaseManager
 
         self.RefreshInventoryTable()
 
