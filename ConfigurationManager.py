@@ -20,22 +20,61 @@ import json
 import os.path
 from os import path
 
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QWidget, QPushButton,
+                             QHBoxLayout, QVBoxLayout, QApplication)
 class ConfigurationManager:
     def __init__(self):
         self.configurations = {}
         
         # Todo: Add error handling
         # Requires Configuration.json, see Configuration.json.example for format
-        with open('Configuration.json') as configuration:
-            jsonFile = json.load(configuration)
-            self.configurations = jsonFile['Configurations']
-        
+        # with open('Configuration.json') as configuration:
+        #    jsonFile = json.load(configuration)
+        #    self.configurations = jsonFile['Configurations']
+
+        self.configurationFieldKeys = {'ServerHostName',
+                                       'ServerPortNumber',
+                                       'DatabaseName',
+                                       'ServerUsername',
+                                       'ServerPassword'
+                                       }
+
     
     def GetDatabaseConfiguration(self):
-        return self.configurations['DatabaseConfigurations']
+        try:
+            with open('Configuration.json') as configuration:
+                databaseConfigurations = json.load(configuration)['Configurations']['DatabaseConfigurations']   
+                return databaseConfigurations
+        except:
+            print("Could not retrieve database configurations")
+            return None
 
     def DoesConfigurationFileExist(self):
         return path.exists('Configuration.json')
+    
+    def IsConfigurationFileFormattedCorrectly(self):
+        try:
+            with open('Configuration.json') as configuration:
+                jsonFile = json.load(configuration)
+
+                if('Configurations' in jsonFile):
+                    databaseConfigurations = jsonFile['Configurations']['DatabaseConfigurations']                    
+
+                    if( 'ServerHostName' in databaseConfigurations and
+                        'ServerPortNumber' in databaseConfigurations and
+                        'DatabaseName' in databaseConfigurations and
+                        'ServerUsername'in databaseConfigurations and
+                        'ServerPassword' in databaseConfigurations):
+                        return True
+                    else:
+                        return False
+                else:
+                    return False
+        except:
+            print("An error occured, could not start Sample Seeker")
+
 
                 
 if __name__ == '__main__':
@@ -46,3 +85,65 @@ if __name__ == '__main__':
         print ("Value: " + str(value))
         
 
+class ConfigurationJsonWindow(QWidget):
+    def __init__(self, configurationManager):
+        super().__init__()
+
+        self.configurationManager = configurationManager
+
+        self.verticalBox = QtWidgets.QVBoxLayout()
+
+        self.serverHostNameSection = QtWidgets.QHBoxLayout()
+        self.serverHostNameLabel = QtWidgets.QLabel('Server Host Name: ')
+        self.serverHostNameInput = QtWidgets.QLineEdit()
+        self.serverHostNameSection.addWidget(self.serverHostNameLabel)
+        self.serverHostNameSection.addWidget(self.serverHostNameInput)
+
+        self.serverPortNumberSection = QtWidgets.QHBoxLayout()
+        self.serverPortNumberLabel = QtWidgets.QLabel('Server Port Number: ')
+        self.serverPortNumberInput = QtWidgets.QLineEdit()
+        self.serverPortNumberSection.addWidget(self.serverPortNumberLabel)
+        self.serverPortNumberSection.addWidget(self.serverPortNumberInput)
+
+        self.serverUserNameSection = QtWidgets.QHBoxLayout()
+        self.serverUserNameLabel = QtWidgets.QLabel('Server User Name: ')
+        self.serverUserNameInput = QtWidgets.QLineEdit()
+        self.serverUserNameSection.addWidget(self.serverUserNameLabel)
+        self.serverUserNameSection.addWidget(self.serverUserNameInput)
+
+        self.serverUserPasswordSection = QtWidgets.QHBoxLayout()
+        self.serverUserPasswordLabel = QtWidgets.QLabel('Server Password: ')
+        self.serverUserPasswordInput = QtWidgets.QLineEdit()
+        self.serverUserPasswordSection.addWidget(self.serverUserPasswordLabel)
+        self.serverUserPasswordSection.addWidget(self.serverUserPasswordInput)
+
+        self.databaseNameSection = QtWidgets.QHBoxLayout()
+        self.databaseNameLabel = QtWidgets.QLabel('Database Name: ')
+        self.databaseNameInput = QtWidgets.QLineEdit()
+        self.databaseNameSection.addWidget(self.databaseNameLabel)
+        self.databaseNameSection.addWidget(self.databaseNameInput)
+
+        self.buttonSection = QtWidgets.QHBoxLayout()
+        self.addButton = QtWidgets.QPushButton("Save")
+        #self.addButton.clicked.connect()
+
+        self.clearButton = QtWidgets.QPushButton("Clear")
+        #self.clearButton.clicked.connect()
+
+        self.buttonSection.addWidget(self.addButton)
+        self.buttonSection.addWidget(self.clearButton)
+
+
+
+        self.verticalBox.addLayout(self.serverHostNameSection)
+        self.verticalBox.addLayout(self.serverPortNumberSection)
+        self.verticalBox.addLayout(self.serverUserNameSection)
+        self.verticalBox.addLayout(self.serverUserPasswordSection)
+        self.verticalBox.addLayout(self.databaseNameSection)
+
+        self.verticalBox.addLayout(self.buttonSection)
+
+        self.setLayout(self.verticalBox)
+
+        self.setGeometry(300, 300, 400, 500)
+        self.setWindowTitle('Create a New Application Configuration')

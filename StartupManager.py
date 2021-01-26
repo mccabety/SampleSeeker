@@ -18,7 +18,7 @@ import sys
 import datetime
 
 from SampleSeeker import MainWindow
-from ConfigurationManager import ConfigurationManager
+from ConfigurationManager import ConfigurationManager, ConfigurationJsonWindow
 from DatabaseManager import DatabaseManager, InventoryItem, Sample
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -26,32 +26,60 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QPushButton,
                              QHBoxLayout, QVBoxLayout, QApplication)
 
-
 class StartupManager:
     def __init__(self):
         print("Startup Manager Constructor")
+        self.app=QtWidgets.QApplication(sys.argv)
+        
+
+
 
         self.configurationManager = ConfigurationManager()
-        self.databaseManager = DatabaseManager(self.configurationManager)
-
-        self.app=QtWidgets.QApplication(sys.argv)
-        self.mainWindow = MainWindow(self.databaseManager)
-
-        self.LaunchMainWindow()
-
-        # --- End Construction ---
+        self.configurationJsonWindow = ConfigurationJsonWindow(self.configurationManager)
 
 
         if(self.configurationManager.DoesConfigurationFileExist()):
             print("Config file exists")
+            if(self.configurationManager.IsConfigurationFileFormattedCorrectly()):
+                print("Config file formatted correctly")
+                self.LaunchMainWindow()
+            else:
+                print("Config file formatted incorrectly")
         else:
-            print("Config file does NOT")
-    
+            print("Config file does NOT Exist")
+
+            if(self.CreateNewConfigurationDialog() == QtWidgets.QMessageBox.Ok):
+                print("Creating new config")
+                self.configurationJsonWindow.show()
+            else:
+                print("NOT creating new config")
+                sys.exit(0)
+
+        sys.exit(self.app.exec_())
+
+    def CreateNewConfigurationDialog(self):
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setIcon(QtWidgets.QMessageBox.Question)
+        msgBox.setWindowTitle("Warning")
+        msgBox.setText("No configuration file found, would you like to create a new one?")
+        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+        return msgBox.exec()
+
     def LaunchMainWindow(self):
+        self.databaseManager = DatabaseManager(self.configurationManager)
+        self.mainWindow = MainWindow(self.databaseManager)
         self.mainWindow.show()
-        self.app.exec_()
 
 
+
+
+class StartupManagerWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.setGeometry(300, 300, 500, 300)
+        self.setWindowTitle('Add New Sample')
 
 def main():
     StartupManager()
