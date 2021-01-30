@@ -23,7 +23,7 @@ from os import path
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QPushButton,
-                             QHBoxLayout, QVBoxLayout, QApplication)
+                             QHBoxLayout, QVBoxLayout, QApplication, QDialog)
 class ConfigurationManager:
     def __init__(self):
         self.configurations = {}
@@ -33,14 +33,21 @@ class ConfigurationManager:
         # with open('Configuration.json') as configuration:
         #    jsonFile = json.load(configuration)
         #    self.configurations = jsonFile['Configurations']
-
+    '''
         self.configurationFieldKeys = {'ServerHostName',
                                        'ServerPortNumber',
                                        'DatabaseName',
                                        'ServerUsername',
                                        'ServerPassword'
                                        }
-
+    '''
+    def CreateDatabaseConfiguration(self, configurationValues):
+        print(configurationValues)
+        try:
+            with open('Configuration.json', "x") as configurationFile:
+                json.dump(configurationValues, configurationFile)
+        except:
+            print("Error: Could not write to configuration file")
     
     def GetDatabaseConfiguration(self):
         try:
@@ -85,7 +92,7 @@ if __name__ == '__main__':
         print ("Value: " + str(value))
         
 
-class ConfigurationJsonWindow(QWidget):
+class ConfigurationJsonWindow(QDialog):
     def __init__(self, configurationManager):
         super().__init__()
 
@@ -124,13 +131,13 @@ class ConfigurationJsonWindow(QWidget):
         self.databaseNameSection.addWidget(self.databaseNameInput)
 
         self.buttonSection = QtWidgets.QHBoxLayout()
-        self.addButton = QtWidgets.QPushButton("Save")
-        #self.addButton.clicked.connect()
+        self.saveButton = QtWidgets.QPushButton("Create")
+        self.saveButton.clicked.connect(self.createConfiguration)
 
         self.clearButton = QtWidgets.QPushButton("Clear")
-        #self.clearButton.clicked.connect()
+        self.clearButton.clicked.connect(self.clearInput)
 
-        self.buttonSection.addWidget(self.addButton)
+        self.buttonSection.addWidget(self.saveButton)
         self.buttonSection.addWidget(self.clearButton)
 
 
@@ -146,4 +153,30 @@ class ConfigurationJsonWindow(QWidget):
         self.setLayout(self.verticalBox)
 
         self.setGeometry(300, 300, 400, 500)
-        self.setWindowTitle('Create a New Application Configuration')
+        self.setWindowTitle('Create Configuration')
+        
+    def createConfiguration(self):
+        configuration = {
+                "Configurations" :
+                {
+                    "DatabaseConfigurations":
+                        {
+                        "ServerHostName": self.serverHostNameInput.text(),
+                        "ServerPortNumber": self.serverPortNumberInput.text(),
+                        'ServerUsername' : self.serverUserNameInput.text() ,
+                        'ServerPassword' : self.serverUserPasswordInput.text(),
+                        'DatabaseName' : self.databaseNameInput.text()
+                        }
+                }
+            }
+            
+        self.configurationManager.CreateDatabaseConfiguration(configuration)
+
+        self.close()
+
+    def clearInput(self):
+        self.serverHostNameInput.setText('')
+        self.serverPortNumberInput.setText('')
+        self.serverUserNameInput.setText('')
+        self.serverUserPasswordInput.setText('')
+        self.databaseNameInput.setText('')

@@ -30,10 +30,6 @@ class StartupManager:
     def __init__(self):
         print("Startup Manager Constructor")
         self.app=QtWidgets.QApplication(sys.argv)
-        
-
-
-
         self.configurationManager = ConfigurationManager()
         self.configurationJsonWindow = ConfigurationJsonWindow(self.configurationManager)
 
@@ -45,12 +41,15 @@ class StartupManager:
                 self.LaunchMainWindow()
             else:
                 print("Config file formatted incorrectly")
+                sys.exit(0)
         else:
             print("Config file does NOT Exist")
 
             if(self.CreateNewConfigurationDialog() == QtWidgets.QMessageBox.Ok):
                 print("Creating new config")
-                self.configurationJsonWindow.show()
+                self.configurationJsonWindow.exec()
+                self.LaunchMainWindow()
+
             else:
                 print("NOT creating new config")
                 sys.exit(0)
